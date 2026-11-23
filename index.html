@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator Mekanika Teknik 3 - Teori Luas Bidang Momen</title>
+<style>
+:root{--navy:#173b63;--blue:#1769aa;--light:#eef5fb;--ink:#203040;--muted:#627386;--orange:#d97732;--green:#16794b;--line:#d5e0ea}
+*{box-sizing:border-box}body{margin:0;background:#f4f7fa;color:var(--ink);font:15px/1.5 Arial,Helvetica,sans-serif}
+header{background:linear-gradient(120deg,#173b63,#246da8);color:#fff;padding:24px max(18px,calc((100% - 1180px)/2))}
+header h1{margin:0 0 5px;font-size:clamp(22px,3vw,31px)}header p{margin:0;color:#e2edf8}
+main{max-width:1180px;margin:22px auto;padding:0 16px 40px}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+.panel,.card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:17px;box-shadow:0 2px 8px #183b5c0b}
+h2{font-size:18px;margin:0 0 13px;color:var(--navy)}h3{font-size:16px;margin:0 0 9px;color:var(--navy)}
+label{display:block;font-weight:700;margin:13px 0 5px}
+input[type=number]{width:100%;padding:10px;border:1px solid #b9c9d8;border-radius:8px;font-size:16px}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.small{font-size:12px;color:var(--muted)}.value{float:right;color:var(--blue);font-variant-numeric:tabular-nums}
+button{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
+button.secondary{background:#e8f0f7;color:var(--navy)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.results{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--light);border-radius:10px;padding:12px}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{font-size:21px;color:var(--navy);font-variant-numeric:tabular-nums}
+.chart{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:9px}
+.chart-wrap{margin:12px 0 18px}.chart-title{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:7px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left}td:last-child,th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.formula{background:#f7f9fc;border-left:3px solid var(--blue);padding:10px 12px;margin:8px 0;border-radius:4px;font-family:Georgia,serif;overflow-wrap:anywhere}
+.note{background:#fff8eb;border:1px solid #f0d9b4;padding:12px;border-radius:9px;font-size:13px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.results{grid-template-columns:repeat(2,1fr)}}
+@media print{body{background:#fff}header{background:#173b63!important;print-color-adjust:exact}.panel,.card{box-shadow:none}.actions{display:none}.layout{grid-template-columns:1fr}.results{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Simulator Mekanika Teknik 3</h1>
+  <p>Balok sederhana sendi–rol · Teori Luas Bidang Momen (Moment Area Method)</p>
+</header>
+<main>
+<div class="layout">
+  <aside class="panel">
+    <h2>Parameter simulasi</h2>
+    <label for="P">Beban terpusat P <span class="value" id="Pv"></span></label>
+    <input id="P" type="range" min="1" max="100" step="1" value="20">
+    <div class="small">Rentang 1–100 kN</div>
+    <label for="L">Panjang bentang L <span class="value" id="Lv"></span></label>
+    <input id="L" type="range" min="2" max="12" step=".5" value="6">
+    <div class="small">Rentang 2–12 m</div>
+    <label for="a">Posisi beban dari A, a <span class="value" id="av"></span></label>
+    <input id="a" type="range" min=".5" max="5.5" step=".1" value="3">
+    <div class="small" id="btext">Jarak dari B: 3,00 m</div>
+    <label for="EI">Kekakuan lentur EI <span class="value" id="EIv"></span></label>
+    <input id="EI" type="range" min="5000" max="100000" step="1000" value="30000">
+    <div class="small">Satuan kN·m² (E × I)</div>
+    <label for="x">Titik pengamatan x <span class="value" id="xv"></span></label>
+    <input id="x" type="range" min="0" max="6" step=".1" value="3">
+    <div class="small">Diukur dari tumpuan A</div>
+    <div class="actions">
+      <button id="reset" class="secondary" type="button">Reset</button>
+      <button id="print" type="button">Cetak / Simpan PDF</button>
+    </div>
+  </aside>
+  <section>
+    <div class="results">
+      <div class="metric"><span>Reaksi A (RA)</span><strong id="RA">10,00</strong><span>kN</span></div>
+      <div class="metric"><span>Reaksi B (RB)</span><strong id="RB">10,00</strong><span>kN</span></div>
+      <div class="metric"><span>Momen maksimum</span><strong id="Mmax">30,00</strong><span>kN·m</span></div>
+      <div class="metric"><span>Lendutan di x</span><strong id="defl">3,75</strong><span>mm ke bawah</span></div>
+    </div>
+    <div class="card">
+      <h2>Skema struktur dan pembebanan</h2>
+      <svg id="beam" class="chart" viewBox="0 0 720 160" role="img" aria-label="Skema balok sendi rol dengan beban terpusat"></svg>
+    </div>
+    <div class="card chart-wrap">
+      <div class="chart-title"><h2>Diagram gaya lintang (SFD)</h2><span class="small">kN</span></div>
+      <svg id="sfd" class="chart" viewBox="0 0 720 190"></svg>
+    </div>
+    <div class="card chart-wrap">
+      <div class="chart-title"><h2>Diagram momen lentur (BMD)</h2><span class="small">kN·m</span></div>
+      <svg id="bmd" class="chart" viewBox="0 0 720 210"></svg>
+    </div>
+    <div class="card chart-wrap">
+      <div class="chart-title"><h2>Kurva elastis / bentuk lendutan</h2><span class="small">Bentuk diperbesar agar terlihat</span></div>
+      <svg id="curve" class="chart" viewBox="0 0 720 190"></svg>
+    </div>
+  </section>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2>Hasil perhitungan pada titik pengamatan</h2>
+  <table>
+    <tbody>
+      <tr><td>Jarak titik pengamatan, x</td><td id="tx">3,00 m</td></tr>
+      <tr><td>Momen lentur M(x)</td><td id="Mx">30,00 kN·m</td></tr>
+      <tr><td>Sudut rotasi θ(x)</td><td id="theta">0,0000 mrad</td></tr>
+      <tr><td>Lendutan v(x)</td><td id="vval">3,7500 mm ke bawah</td></tr>
+      <tr><td>Sudut rotasi di A, θA</td><td id="thetaA">-5,8333 mrad</td></tr>
+      <tr><td>Sudut rotasi di B, θB</td><td id="thetaB">5,8333 mrad</td></tr>
+    </tbody>
+  </table>
+  <h3 style="margin-top:18px">Persamaan dan langkah analisis</h3>
+  <div class="formula">ΣM<sub>A</sub> = 0 → R<sub>B</sub> L − P a = 0 → R<sub>B</sub> = Pa/L</div>
+  <div class="formula">ΣV = 0 → R<sub>A</sub> + R<sub>B</sub> − P = 0 → R<sub>A</sub> = P(L−a)/L</div>
+  <div class="formula">M(x) = R<sub>A</sub>x − P⟨x−a⟩</div>
+  <div class="formula">θ(x) = [R<sub>A</sub>x² − P⟨x−a⟩²]/(2EI) + C₁</div>
+  <div class="formula">v(x) = [R<sub>A</sub>x³ − P⟨x−a⟩³]/(6EI) + C₁x</div>
+  <div class="formula">C₁ = −[R<sub>A</sub>L² − P(L−a)³/L]/(6EI)</div>
+  <p class="small">Notasi Macaulay: ⟨x−a⟩ = 0 jika x ≤ a, dan (x−a) jika x &gt; a. Konvensi: momen sagging positif; lendutan ke bawah dilaporkan sebagai nilai positif; rotasi positif berlawanan arah jarum jam.</p>
+</div>
+<div class="note" style="margin-top:16px">
+  <strong>Catatan pembelajaran:</strong> Teorema luas bidang momen I menyatakan perubahan sudut antara dua garis singgung sama dengan luas aljabar diagram M/EI. Teorema II menyatakan penyimpangan tangensial sama dengan momen pertama luas diagram M/EI terhadap titik yang ditinjau. Simulator ini menghitung rotasi dan lendutan melalui integrasi persamaan M/EI, sehingga dapat digunakan untuk memeriksa hasil perhitungan metode luas bidang momen.
+</div>
+</main>
+<footer>Media pembelajaran Mekanika Teknik 3 · Balok elastis linier · EI konstan · Lendutan kecil</footer>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(n,d=2)=>Number(n).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+function macaulay(z,a){return Math.max(0,z-a)}
+function update(){
+ const P=+$('P').value,L=+$('L').value,a=Math.min(L-.5,Math.max(.5,+$('a').value)),EI=+$('EI').value,x=Math.min(L,+$('x').value),b=L-a;
+ $('a').max=(L-.5).toFixed(1);$('x').max=L;
+ if(+$('a').value!==a)$('a').value=a;if(+$('x').value!==x)$('x').value=x;
+ const RA=P*b/L,RB=P*a/L;
+ const C1=-(RA*L*L-P*b*b*b/L)/(6*EI);
+ const thetaAt=z=>(RA*z*z-P*macaulay(z,a)**2)/(2*EI)+C1;
+ const vAt=z=>(RA*z**3-P*macaulay(z,a)**3)/(6*EI)+C1*z;
+ const MAt=z=>RA*z-P*macaulay(z,a);
+ const Mmax=RA*a;
+ $('Pv').textContent=P+' kN';$('Lv').textContent=fmt(L,1)+' m';$('av').textContent=fmt(a,1)+' m';$('EIv').textContent=EI.toLocaleString('id-ID')+' kN·m²';$('xv').textContent=fmt(x,1)+' m';$('btext').textContent='Jarak dari B: '+fmt(b)+' m';
+ $('RA').textContent=fmt(RA);$('RB').textContent=fmt(RB);$('Mmax').textContent=fmt(Mmax);
+ $('defl').textContent=fmt(-vAt(x)*1000,3);
+ $('tx').textContent=fmt(x)+' m';$('Mx').textContent=fmt(MAt(x))+' kN·m';
+ $('theta').textContent=fmt(thetaAt(x)*1000,4)+' mrad';
+ $('vval').textContent=fmt(-vAt(x)*1000,4)+' mm ke bawah';
+ $('thetaA').textContent=fmt(thetaAt(0)*1000,4)+' mrad';$('thetaB').textContent=fmt(thetaAt(L)*1000,4)+' mrad';
+ drawBeam(P,L,a,RA,RB);drawDiagram('sfd',L,z=>z<a-1e-8?RA:RA-P,Math.max(P,1),'SFD');drawDiagram('bmd',L,MAt,Math.max(Mmax,1),'BMD');drawCurve(L,vAt);
+}
+function drawBeam(P,L,a,RA,RB){
+ const X=z=>65+590*z/L,px=X(a);
+ $('beam').innerHTML=`<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#d97732"/></marker></defs>
+ <line x1="65" y1="75" x2="655" y2="75" stroke="#203040" stroke-width="5"/>
+ <path d="M65 78L49 105H81Z" fill="#dce5ed" stroke="#203040"/><circle cx="643" cy="91" r="5" fill="#fff" stroke="#203040"/><circle cx="667" cy="91" r="5" fill="#fff" stroke="#203040"/>
+ <line x1="${px}" y1="16" x2="${px}" y2="58" stroke="#d97732" stroke-width="3" marker-end="url(#arr)"/>
+ <text x="${px+10}" y="20" fill="#d97732" font-size="15" font-weight="bold">P = ${P} kN</text>
+ <text x="65" y="128" text-anchor="middle" font-size="14">A (sendi)</text><text x="655" y="128" text-anchor="middle" font-size="14">B (rol)</text>
+ <text x="360" y="151" text-anchor="middle" font-size="14">L = ${fmt(L,1)} m · a = ${fmt(a,1)} m</text>
+ <path d="M65 39V31H${px}V39M${px} 39V31H655V39" stroke="#8ca0b3" fill="none"/>
+ <text x="${(65+px)/2}" y="27" text-anchor="middle" font-size="12" fill="#627386">${fmt(a,1)} m</text><text x="${(px+655)/2}" y="27" text-anchor="middle" font-size="12" fill="#627386">${fmt(L-a,1)} m</text>`;
+}
+function drawDiagram(id,L,fn,maxVal,type){
+ const left=65,right=655,base=type==='SFD'?92:165,top=18,bottom=type==='SFD'?158:188;
+ const X=z=>left+(right-left)*z/L,scale=(type==='SFD'?55:130)/maxVal;
+ let path=`M ${X(0)} ${base}`;
+ for(let i=0;i<=100;i++){let z=L*i/100;let val=fn(z);path+=` L ${X(z).toFixed(2)} ${(base-val*scale).toFixed(2)}`}
+ const y0=base;
+ $(id).innerHTML=`<line x1="${left}" y1="${y0}" x2="${right}" y2="${y0}" stroke="#506579" stroke-width="1.5"/>
+ <path d="${path} L ${right} ${base} L ${left} ${base} Z" fill="${type==='SFD'?'#dcecf8':'#fbe7d8'}" opacity=".9"/>
+ <path d="${path}" fill="none" stroke="${type==='SFD'?'#1769aa':'#d97732'}" stroke-width="3"/>
+ <text x="${left}" y="${bottom}" font-size="12" fill="#627386">A (0)</text><text x="${right}" y="${bottom}" text-anchor="end" font-size="12" fill="#627386">B (${fmt(L,1)} m)</text>
+ <text x="12" y="16" font-size="12" fill="#627386">${type==='SFD'?'V':'M'}</text><text x="12" y="${base-5}" font-size="11" fill="#627386">0</text>`;
+}
+function drawCurve(L,vAt){
+ const left=65,right=655,base=48,amp=90;
+ let vals=Array.from({length:101},(_,i)=>vAt(L*i/100));let max=Math.max(...vals.map(Math.abs),1e-9);
+ let d='';for(let i=0;i<=100;i++){let z=L*i/100,y=base+vals[i]/max*amp;d+=(i?' L ':'M ')+`${left+(right-left)*i/100} ${y}`;}
+ $('curve').innerHTML=`<line x1="${left}" y1="${base}" x2="${right}" y2="${base}" stroke="#506579" stroke-width="2" stroke-dasharray="6 4"/>
+ <path d="${d}" fill="none" stroke="#16794b" stroke-width="3"/><text x="${left}" y="174" font-size="12" fill="#627386">A (sendi)</text><text x="${right}" y="174" text-anchor="end" font-size="12" fill="#627386">B (rol)</text>
+ <text x="360" y="190" text-anchor="middle" font-size="11" fill="#627386">Bentuk deformasi skematis (tidak berskala)</text>`;
+}
+['P','L','a','EI','x'].forEach(id=>$(id).addEventListener('input',update));
+$('reset').addEventListener('click',()=>{$('P').value=20;$('L').value=6;$('a').value=3;$('EI').value=30000;$('x').value=3;update()});
+$('print').addEventListener('click',()=>window.print());
+update();
+</script>
+</body>
+</html>
